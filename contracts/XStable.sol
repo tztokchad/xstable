@@ -174,11 +174,11 @@ contract XStable is Ownable {
 
     /**
     * Mints reward tokens from supported Curve clone contracts.
-    * @return Array of reward tokens claimed by XStable contract
+    * @return Whether reward tokens were claimed by XStable contract
     */
     function mintPoolRewards()
     public 
-    returns (uint256[] rewards){
+    returns (bool){
 
     }
 
