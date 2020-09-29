@@ -189,6 +189,8 @@ contract XStable is Ownable {
     returns (bool){
       // Mint CRV on all gauges with non-zero claimable token rewards
       require(_mintCurveRewards(), "Error minting CRV rewards");
+      // Mint SWRV if gauge has non-zero claimable token rewards
+      require(_mintSwerveRewards(), "Error minting SWRV rewards");
       return true;
     }
 
@@ -211,6 +213,18 @@ contract XStable is Ownable {
       // Call mint for all gauges with claimable token rewards
       curveMinter.mint_many(claimableGauges);
 
+      return true;
+    }
+
+    /**
+    * Mints from swerve pool if it has a positive claimable token balance
+    * @return Whether mint was successful
+    */
+    function _mintSwerveRewards()
+    internal
+    returns (bool) {
+      if (swerveGauge.claimable_tokens(address(this) > 0))
+        swerveMinter.mint(swerveGauge);
       return true;
     }
 
