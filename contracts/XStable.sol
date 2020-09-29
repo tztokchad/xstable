@@ -35,6 +35,14 @@ contract XStable is Ownable {
 
     ILiquidityGauge constant internal swerveGauge         = ILiquidityGauge(0xb4d0C929cD3A1FbDc6d57E7D3315cF0C4d6B4bFa);
 
+    ILiquidityGauge[] constant internal curveGauges = [
+      curveCompountGauge,
+      curveYGauge,
+      curveBinanceGauge,
+      curveSynthetixGauge,
+      curvePAXGauge
+    ];
+
     /** Minter addresses */
     IMinter constant internal curveMinter = IMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
 
@@ -179,7 +187,31 @@ contract XStable is Ownable {
     function mintPoolRewards()
     public 
     returns (bool){
+      // Mint CRV on all gauges with non-zero claimable token rewards
+      require(_mintCurveRewards(), "Error minting CRV rewards");
+      return true;
+    }
 
+    /**
+    * Mints from all curve pools with a positive balance in the contract
+    * @return Whether mint was successful
+    */
+    function _mintCurveRewards()
+    internal
+    returns (bool) {
+      address[8] claimableGauges;
+      for (uint8 i = 0; i < curveGauges.length; i++) {
+        ILiquidityGauge gauge = curveGauges[i];
+
+        // Add to claimable gauges if reward tokens are available
+        if (gauge.claimable_tokens(address(this)) > 0)
+          claimableGauges.push(address(gauge));
+      }
+
+      // Call mint for all gauges with claimable token rewards
+      curveMinter.mint_many(claimableGauges);
+
+      return true;
     }
 
     /**
