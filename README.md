@@ -1,6 +1,6 @@
 # XStable
 
-Stablecoin backed by stablecoins locked into Curve/Swerve DAO.
+Stablecoin backed by stablecoins locked into Curve/Swerve DAO. This allows for 3 layers of rewards (and maximum APRs) - Curve LP, DAO and XST (XStable Token) Farming.
 
 ## Working
 
