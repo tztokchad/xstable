@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 
+import "./interface/IUniswapV2Router.sol";
+
 import "./token/XSUSD.sol";
 
 import "./interface/ILiquidityGauge.sol";
@@ -45,8 +47,17 @@ contract XStable is Ownable {
 
     /** Minter addresses */
     IMinter constant internal curveMinter = IMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
-
     IMinter constant internal swerveMinter = IMinter(0x2c988c3974ad7e604e276ae0294a7228def67974);
+
+    /** Reward token addresses */
+    IERC20 public curveToken  = IERC20(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    IERC20 public swerveToken = IERC20(0xB8BAa0e4287890a5F79863aB62b7F175ceCbD433);
+
+    /** Other token addresses */
+    IERC20 public usdcToken = IERC20(0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48);
+
+    /** Uniswap router address */
+    IUniswapV2Router01 uniswapRouter = IUniswapV2Router01(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
     // Emitted on depositing lp tokens and minting XSUSD
     event Deposit(
@@ -60,6 +71,12 @@ contract XStable is Ownable {
       address sender,
       uint256 amount,
       uint256 burnedXSUsd
+    );
+
+    // Emitted when pool rewards are minted and sold for USDC
+    event MintPoolRewards(
+      address caller,
+      uint256 usdcAmount
     );
 
     // Maps swap addresses to gauges
@@ -191,6 +208,11 @@ contract XStable is Ownable {
       require(_mintCurveRewards(), "Error minting CRV rewards");
       // Mint SWRV if gauge has non-zero claimable token rewards
       require(_mintSwerveRewards(), "Error minting SWRV rewards");
+      uint256 usdcAmount = _swapRewardsToUsdc();
+      emit MintPoolRewards(
+        msg.sender,
+        usdcAmount
+      );
       return true;
     }
 
@@ -226,6 +248,43 @@ contract XStable is Ownable {
       if (swerveGauge.claimable_tokens(address(this) > 0))
         swerveMinter.mint(swerveGauge);
       return true;
+    }
+
+    /**
+    * Swaps reward tokens to USDC via Uniswap
+    * @return Amount of USDC collected from sales
+    */
+    function _swapRewardsToUsdc()
+    internal
+    returns (uint256 _usdcAmount) {
+      // Swap CRV to USDC
+      _usdcAmount += _swapTokenToUsdc(crvToken);
+      // Swap SWRV to USDC
+      _usdcAmount += _swapTokenToUsdc(swerveToken);
+    }
+
+    /**
+    * Swaps a token to USDC via uniswap v2 router
+    * @return Whether token was swapped to USDC
+    */
+    function _swapTokenToUsdc(
+      address _token,
+    )
+    internal
+    returns (uint256) {
+      address[] memory swapPath = new address[](2);
+      swapPath[0] = address(_token);
+      swapPath[1] = address(usdcToken);
+
+      uint256 preSwapUsdcBalance = usdcToken.balanceOf(address(this));
+      IUniswapV2Router01(uniswapRouter).swapExactTokensForTokens(
+        IERC20(_token).balanceOf(this), 
+        0, 
+        swapPath, 
+        address(this), 
+        now.add(1800)
+      );
+      return usdcToken.balanceOf(address(this)) - preSwapUsdcBalance;
     }
 
     /**
