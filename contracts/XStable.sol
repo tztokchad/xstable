@@ -118,7 +118,7 @@ contract XStable is Ownable {
         uint256 _amount
     )
     public
-    returns (uint256 lpTokensWithdrawn) {
+    returns (uint256 withdrawableLpTokens) {
         ILiquidityGauge gauge = swapGauges[_swap];
         require(address(gauge) != address(0), "Invalid swap address");
 
@@ -135,12 +135,10 @@ contract XStable is Ownable {
         require(xsUsd.allowance(msg.sender, address(this)) >= _amount, "allowance < _amount");
 
         // Calculate withdrawable lp tokens based on virtual price
-        uint256 withdrawableLpTokens = _amount.mul(10**18).div(virtualPrice).div(10**18);
+        withdrawableLpTokens = _amount.mul(10**18).div(virtualPrice).div(10**18);
 
         // Calculate max withdrawable lp tokens based on virtual price
         uint256 maxWithdrawableLpTokens = IERC20(lpToken).balanceOf(address(this)).mul(10**18).div(virtualPrice).div(10**18);
-
-        lpTokensWithdrawn = withdrawableLpTokens;
 
         // Number of withdrawable lp tokens cannot be more than max withdrawable lp tokens
         require(
