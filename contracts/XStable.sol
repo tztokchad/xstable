@@ -9,6 +9,7 @@ import "./token/XSUSD.sol";
 
 import "./interface/ILiquidityGauge.sol";
 import "./interface/ICurve.sol";
+import "./interface/IMinter.sol";
 
 contract XStable is Ownable {
 
@@ -33,6 +34,11 @@ contract XStable is Ownable {
     ILiquidityGauge constant internal curvePAXGauge       = ILiquidityGauge(0x64E3C23bfc40722d3B649844055F1D51c1ac041d);
 
     ILiquidityGauge constant internal swerveGauge         = ILiquidityGauge(0xb4d0C929cD3A1FbDc6d57E7D3315cF0C4d6B4bFa);
+
+    /** Minter addresses */
+    IMinter constant internal curveMinter = IMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
+
+    IMinter constant internal swerveMinter = IMinter(0x2c988c3974ad7e604e276ae0294a7228def67974);
 
     // Emitted on depositing lp tokens and minting XSUSD
     event Deposit(
@@ -166,6 +172,24 @@ contract XStable is Ownable {
         );
     }
 
+    /**
+    * Mints reward tokens from supported Curve clone contracts.
+    * @return Array of reward tokens claimed by XStable contract
+    */
+    function mintPoolRewards()
+    public 
+    returns (uint256[] rewards){
 
+    }
+
+    /**
+    * Claim USDC for user based on time weight % of supply held by user
+    * @return Amount of USDC reward allocated to user
+    */
+    function claimRewards()
+    public 
+    returns (uint256 rewardAmount){
+
+    }
 
 }

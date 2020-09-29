@@ -8,7 +8,7 @@ XStable allows users to deposit Curve (and curve clone) LP tokens into their res
 
 XSUSD can be redeemed at any point in time for LP tokens in the contracts' reserves based on LP token virtual prices at the time of withdrawal.
 
-CRV, SWRV, SNOW rewards are claimed and insta-sold on uniswap for USDC. The resulting USDC is claimable by users based on their % of the XSUSD supply coupled with how long the XSUSD was held.
+CRV, SWRV, SNOW rewards are claimed and insta-sold on uniswap/sushiswap for USDC. The resulting USDC is claimable by users based on their % of the XSUSD supply coupled with how long the XSUSD was held.
 
 XSUSD while being ERC20s, have a couple of additional functions such as `transferWithReward()` which allows users to transfer tokens along with their share of claimable rewards to the receiver. 
 
