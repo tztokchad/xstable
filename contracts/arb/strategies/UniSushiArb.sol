@@ -18,7 +18,7 @@ pragma experimental ABIEncoderV2;
 */
 
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
-import "./interface/IUniswapV2Router.sol";
+import "../interface/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -90,7 +90,10 @@ contract UniSushiArb is Ownable {
     /**
         sweep entire balance on the arb contract back to contract owner
      */
-    function withdrawBalance(address _token) public payable onlyOwner {
+    function withdrawBalance(address _token) 
+    public 
+    payable
+    onlyOwner {
         // withdraw all ETH
         msg.sender.call{ value: address(this).balance }("");
         // withdraw all x ERC20 tokens
