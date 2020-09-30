@@ -29,7 +29,7 @@ contract XStable is Ownable {
 
     ICurve constant internal swerveUSD      = ICurve(0x329239599afB305DA0A2eC69c58F8a6697F9F88d);
 
-    ICurve[] constant internal curveSwaps = [
+    ICurve[5] internal curveSwaps = [
       curveCompound,
       curveY,
       curveBinance,
@@ -46,8 +46,8 @@ contract XStable is Ownable {
 
     ILiquidityGauge constant internal swerveGauge         = ILiquidityGauge(0xb4d0C929cD3A1FbDc6d57E7D3315cF0C4d6B4bFa);
 
-    ILiquidityGauge[] constant internal curveGauges = [
-      curveCompountGauge,
+    ILiquidityGauge[5] internal curveGauges = [
+      curveCompoundGauge,
       curveYGauge,
       curveBinanceGauge,
       curveSynthetixGauge,
@@ -56,14 +56,14 @@ contract XStable is Ownable {
 
     /** Minter addresses */
     IMinter constant internal curveMinter = IMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
-    IMinter constant internal swerveMinter = IMinter(0x2c988c3974ad7e604e276ae0294a7228def67974);
+    IMinter constant internal swerveMinter = IMinter(0x2c988c3974AD7E604E276AE0294a7228DEf67974);
 
     /** Reward token addresses */
     IERC20 public curveToken  = IERC20(0xD533a949740bb3306d119CC777fa900bA034cd52);
     IERC20 public swerveToken = IERC20(0xB8BAa0e4287890a5F79863aB62b7F175ceCbD433);
 
     /** Other token addresses */
-    IERC20 public usdcToken = IERC20(0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48);
+    IERC20 public usdcToken = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
     /** Uniswap router address */
     IUniswapV2Router01 uniswapRouter = IUniswapV2Router01(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
@@ -138,7 +138,7 @@ contract XStable is Ownable {
         mintableXSUSDInWei = _amount.mul(virtualPrice).div(10 ** 18);
 
         // Deposit _amount to gauge
-        gauge.deposit(_amount);
+        gauge.deposit(_amount, address(this));
 
         // Mint `mintableXSUSDInWei` XSUSD for msg.sender
         require(xsUsd.mint(msg.sender, mintableXSUSDInWei), "Error minting XSUSD");
@@ -238,13 +238,13 @@ contract XStable is Ownable {
     function _mintCurveRewards()
     internal
     returns (bool) {
-      address[8] claimableGauges;
+      address[8] memory claimableGauges;
       for (uint8 i = 0; i < curveGauges.length; i++) {
         ILiquidityGauge gauge = curveGauges[i];
 
         // Add to claimable gauges if reward tokens are available
         if (gauge.claimable_tokens(address(this)) > 0)
-          claimableGauges.push(address(gauge));
+          claimableGauges[i] = address(gauge);
       }
 
       // Call mint for all gauges with claimable token rewards
@@ -260,22 +260,22 @@ contract XStable is Ownable {
     function _mintSwerveRewards()
     internal
     returns (bool) {
-      if (swerveGauge.claimable_tokens(address(this) > 0))
-        swerveMinter.mint(swerveGauge);
+      if (swerveGauge.claimable_tokens(address(this)) > 0)
+        swerveMinter.mint(address(swerveGauge));
       return true;
     }
 
     /**
     * Swaps reward tokens to USDC via Uniswap
-    * @return Amount of USDC collected from sales
+    * @return _usdcAmount Amount of USDC collected from sales
     */
     function _swapRewardsToUsdc()
     internal
     returns (uint256 _usdcAmount) {
       // Swap CRV to USDC
-      _usdcAmount += _swapTokenToUsdc(crvToken);
+      _usdcAmount += _swapTokenToUsdc(address(curveToken));
       // Swap SWRV to USDC
-      _usdcAmount += _swapTokenToUsdc(swerveToken);
+      _usdcAmount += _swapTokenToUsdc(address(swerveToken));
     }
 
     /**
@@ -283,7 +283,7 @@ contract XStable is Ownable {
     * @return Whether token was swapped to USDC
     */
     function _swapTokenToUsdc(
-      address _token,
+      address _token
     )
     internal
     returns (uint256) {
@@ -293,7 +293,7 @@ contract XStable is Ownable {
 
       uint256 preSwapUsdcBalance = usdcToken.balanceOf(address(this));
       IUniswapV2Router01(uniswapRouter).swapExactTokensForTokens(
-        IERC20(_token).balanceOf(this), 
+        IERC20(_token).balanceOf(address(this)), 
         0, 
         swapPath, 
         address(this), 
@@ -304,7 +304,7 @@ contract XStable is Ownable {
 
     /**
     * Claim USDC for user based on time weight % of supply held by user
-    * @return Amount of USDC reward allocated to user
+    * @return rewardAmount Amount of USDC reward allocated to user
     */
     function claimRewards()
     public 
@@ -314,7 +314,7 @@ contract XStable is Ownable {
 
     /**
     * Calculates virtual price based on total deposits across all liquidity gauges
-    * @return Current virtual price for 1 XSUSD
+    * @return virtualPrice Current virtual price for 1 XSUSD
     */
     function getVirtualPrice()
     public
@@ -324,7 +324,7 @@ contract XStable is Ownable {
       uint256 totalDepositsUsdValue;
       for (uint8 i = 0; i < curveSwaps.length; i++) {
         uint256 lpVirtualPrice = curveSwaps[i].get_virtual_price();
-        ILiquidityGauge gauge = swapGauges[curveSwaps[i]];
+        ILiquidityGauge gauge = swapGauges[address(curveSwaps[i])];
         uint256 lpTokenBalance = gauge.balanceOf(address(this));
         totalDepositsUsdValue = totalDepositsUsdValue.add(lpTokenBalance.mul(lpVirtualPrice));
       }

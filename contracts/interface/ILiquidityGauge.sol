@@ -1,6 +1,8 @@
 pragma solidity ^0.6.10;
 
 interface ILiquidityGauge {
+    function balanceOf(address _addr) external view returns (uint256);
+    
     function deposit(uint256 _value, address addr) external;
 
     function withdraw(uint256 _value) external;

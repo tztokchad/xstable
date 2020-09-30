@@ -1,4 +1,4 @@
-pragma solidity 0.6.12;
+pragma solidity 0.6.10;
 
 // Source: https://github.com/fifikobayashi/Flash-Arb-Trader
 
@@ -19,13 +19,13 @@ pragma solidity 0.6.12;
 */
 
 // importing flash loan dependencies as per https://docs.aave.com/developers/tutorials/performing-a-flash-loan/...-with-remix
-import "https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/FlashLoanReceiverBase.sol";
-import "https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/ILendingPoolAddressesProvider.sol";
-import "https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/ILendingPool.sol";
+import "./aave/FlashLoanReceiverBase.sol";
+import "./aave/ILendingPoolAddressesProvider.sol";
+import "./aave/ILendingPool.sol";
 
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
-import "https://github.com/sushiswap/sushiswap/blob/master/contracts/uniswapv2/interfaces/IUniswapV2Router02.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
+import "./interface/IUniswapV2Router.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract FlashArbTrader is FlashLoanReceiverBase {
 
