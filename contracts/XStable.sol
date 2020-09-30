@@ -17,6 +17,7 @@ contract XStable is Ownable {
 
     using SafeMath for uint256;
 
+    // XSUSD token address
     XSUSD public xsUsd;
 
     /** Swap addresses **/
@@ -27,6 +28,14 @@ contract XStable is Ownable {
     ICurve constant internal curvePAX       = ICurve(0x06364f10B501e868329afBc005b3492902d6C763);
 
     ICurve constant internal swerveUSD      = ICurve(0x329239599afB305DA0A2eC69c58F8a6697F9F88d);
+
+    ICurve[] constant internal curveSwaps = [
+      curveCompound,
+      curveY,
+      curveBinance,
+      curveSynthetix,
+      curvePAX
+    ];
 
     /** Gauge addresses **/
     ILiquidityGauge constant internal curveCompoundGauge  = ILiquidityGauge(0x7ca5b0a2910B33e9759DC7dDB0413949071D7575);
@@ -128,6 +137,9 @@ contract XStable is Ownable {
         // Amount of XSUsd tokens to mint in wei = amount of lp tokens to deposit * virtual price
         mintableXSUSDInWei = _amount.mul(virtualPrice).div(10 ** 18);
 
+        // Deposit _amount to gauge
+        gauge.deposit(_amount);
+
         // Mint `mintableXSUSDInWei` XSUSD for msg.sender
         require(xsUsd.mint(msg.sender, mintableXSUSDInWei), "Error minting XSUSD");
 
@@ -176,6 +188,9 @@ contract XStable is Ownable {
           withdrawableLpTokens <= maxWithdrawableLpTokens, 
           "withdrawableLpTokens > maxWithdrawableLpTokens"
         );
+
+        // Withdraw LP tokens from gauge
+        gauge.withdraw(withdrawableLpTokens);
 
         // Transfer lp tokens to user and burn XSUSD
         require(
@@ -295,6 +310,25 @@ contract XStable is Ownable {
     public 
     returns (uint256 rewardAmount){
 
+    }
+
+    /**
+    * Calculates virtual price based on total deposits across all liquidity gauges
+    * @return Current virtual price for 1 XSUSD
+    */
+    function getVirtualPrice()
+    public
+    returns (uint256 virtualPrice) {
+      uint256 xsUsdSupply = xsUsd.totalSupply();
+      // Value of all deposits in gauges based on virtual prices
+      uint256 totalDepositsUsdValue;
+      for (uint8 i = 0; i < curveSwaps.length; i++) {
+        uint256 lpVirtualPrice = curveSwaps[i].get_virtual_price();
+        ILiquidityGauge gauge = swapGauges[curveSwaps[i]];
+        uint256 lpTokenBalance = gauge.balanceOf(address(this));
+        totalDepositsUsdValue = totalDepositsUsdValue.add(lpTokenBalance.mul(lpVirtualPrice));
+      }
+      virtualPrice = totalDepositsUsdValue.div(xsUsdSupply);
     }
 
 }
