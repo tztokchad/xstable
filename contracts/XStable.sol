@@ -328,7 +328,7 @@ contract XStable is Ownable {
         uint256 lpTokenBalance = gauge.balanceOf(address(this));
         totalDepositsUsdValue = totalDepositsUsdValue.add(lpTokenBalance.mul(lpVirtualPrice));
       }
-      virtualPrice = totalDepositsUsdValue.div(xsUsdSupply);
+      virtualPrice = totalDepositsUsdValue.mul(10**18).div(xsUsdSupply);
     }
 
 }
