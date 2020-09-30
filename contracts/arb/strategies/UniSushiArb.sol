@@ -18,7 +18,7 @@ pragma experimental ABIEncoderV2;
 */
 
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
-import "../interface/IUniswapV2Router.sol";
+import "../../interface/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
