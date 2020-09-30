@@ -33,8 +33,7 @@ contract FlashArbTrader is DyDxFlashLoan, Ownable {
     IUniswapV2Router02 sushiswapV1Router;
     uint256 public loan;
     uint deadline;
-    IERC20 dai;
-    address daiTokenAddress;
+    IERC20 dai = IERC20(DAI);
     uint256 amountToTrade;
     uint256 tokensOut;
     
@@ -58,15 +57,11 @@ contract FlashArbTrader is DyDxFlashLoan, Ownable {
     function getFlashloan(
       address _flashToken,
       uint256 _flashAmount,
-      address _daiTokenAddress,
       uint _amountToTrade,
       uint256 _tokensOut
     ) external {
         uint256 balanceBefore = IERC20(_flashToken).balanceOf(address(this));
         bytes memory data = abi.encode(_flashToken, _flashAmount, balanceBefore);
-
-        daiTokenAddress = address(_daiTokenAddress);
-        dai = IERC20(daiTokenAddress);
         
         amountToTrade = _amountToTrade; // how much wei you want to trade
         tokensOut = _tokensOut; // how many tokens you want converted on the return trade     
@@ -109,7 +104,7 @@ contract FlashArbTrader is DyDxFlashLoan, Ownable {
             value: amountToTrade 
         }(
             amountToTrade, 
-            getPathForETHToToken(daiTokenAddress), 
+            getPathForETHToToken(DAI), 
             address(this), 
             deadline
         ){
@@ -118,7 +113,7 @@ contract FlashArbTrader is DyDxFlashLoan, Ownable {
         }
         
         uint256 tokenAmountInWEI = tokensOut.mul(1000000000000000000); //convert into Wei
-        uint256 estimatedETH = getEstimatedETHForToken(tokensOut, daiTokenAddress)[0]; // check how much ETH you'll get for x number of ERC20 token
+        uint256 estimatedETH = getEstimatedETHForToken(tokensOut, DAI)[0]; // check how much ETH you'll get for x number of ERC20 token
         
         // grant uniswap / sushiswap access to your token, DAI used since we're swapping DAI back into ETH
         dai.approve(address(uniswapV2Router), tokenAmountInWEI);
@@ -128,7 +123,7 @@ contract FlashArbTrader is DyDxFlashLoan, Ownable {
         try sushiswapV1Router.swapExactTokensForETH (
             tokenAmountInWEI, 
             estimatedETH, 
-            getPathForTokenToETH(daiTokenAddress), 
+            getPathForTokenToETH(DAI), 
             address(this), 
             deadline
         ){
