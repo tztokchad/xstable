@@ -17,23 +17,17 @@ pragma experimental ABIEncoderV2;
     - ETH:                                  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
 */
 
-import "./dydx/DyDxFlashLoan.sol";
-
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
 import "./interface/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Arb is DyDxFlashLoan, Ownable {
+contract UniSushiArb is Ownable {
 
     using SafeMath for uint256;
     IUniswapV2Router02 uniswapV2Router;
     IUniswapV2Router02 sushiswapV1Router;
-    uint256 public loan;
     uint deadline;
-    IERC20 dai = IERC20(DAI);
-    uint256 amountToTrade;
-    uint256 tokensOut;
     
     /**
         Initialize deployment parameters
@@ -52,59 +46,20 @@ contract Arb is DyDxFlashLoan, Ownable {
       deadline = block.timestamp + 300; // 5 minutes
     }
 
-    function initFlashloan(
-      address _flashToken,
-      uint256 _flashAmount,
-      uint _amountToTrade,
-      uint256 _tokensOut
-    ) 
-    external
-    onlyOwner {
-        uint256 balanceBefore = IERC20(_flashToken).balanceOf(address(this));
-        bytes memory data = abi.encode(_flashToken, _flashAmount, balanceBefore);
-        
-        amountToTrade = _amountToTrade; // how much wei you want to trade
-        tokensOut = _tokensOut; // how many tokens you want converted on the return trade     
-
-        flashloan(_flashToken, _flashAmount, data); // execution goes to `callFunction`
-        // and at this point we have succefully paid the debt
-    }
-
-    function callFunction(
-        address, /* sender */
-        Info calldata, /* accountInfo */
-        bytes calldata data
-    ) external onlyPool {
-        (address flashToken, uint256 flashAmount, uint256 balanceBefore) = abi
-            .decode(data, (address, uint256, uint256));
-        uint256 balanceAfter = IERC20(flashToken).balanceOf(address(this));
-        require(
-            balanceAfter - balanceBefore == flashAmount,
-            "contract did not get the loan"
-        );
-        loan = balanceAfter;
-
-        // execute arbitrage strategy
-        try this.executeArbitrage() {
-        } catch Error(string memory) {
-            // Reverted with a reason string provided
-        } catch (bytes memory) {
-            // failing assertion, division by zero.. blah blah
-        }
-        // the debt will be automatically withdrawn from this contract at the end of execution
-    }
-
     /**
         The specific cross protocol swaps that makes up your arb strategy
         UniswapV2 -> SushiswapV1 example below
      */
-    function executeArbitrage() public {
-        // Trade 1: Execute swap of Ether into designated ERC20 token on UniswapV2
-        try uniswapV2Router.swapETHForExactTokens{ 
-            value: amountToTrade 
-        }(
+    function execute(
+      uint256 amountToTrade,
+      address token1,
+      address token2,
+      uint256 tokensOut
+    ) public {
+        // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
+        try uniswapV2Router.swapExactTokensForTokens(
             amountToTrade, 
-            getPathForETHToToken(DAI), 
+            getPathForTokenToToken(token1, token2), 
             address(this), 
             deadline
         ){
@@ -113,7 +68,7 @@ contract Arb is DyDxFlashLoan, Ownable {
         }
         
         uint256 tokenAmountInWEI = tokensOut.mul(10 ** 18); //convert into Wei
-        uint256 estimatedETH = getEstimatedETHForToken(tokensOut, DAI)[0]; // check how much ETH you'll get for x number of ERC20 token
+        uint256 estimatedETH = getEstimatedTokenForToken(tokensOut, token1, token2)[0]; // check how much token2 you'll get for x number of token1
         
         // grant uniswap / sushiswap access to your token, DAI used since we're swapping DAI back into ETH
         dai.approve(address(uniswapV2Router), tokenAmountInWEI);
@@ -123,7 +78,7 @@ contract Arb is DyDxFlashLoan, Ownable {
         try sushiswapV1Router.swapExactTokensForETH (
             tokenAmountInWEI, 
             estimatedETH, 
-            getPathForTokenToETH(DAI), 
+            getPathForTokenToToken(token1, token2), 
             address(this), 
             deadline
         ){
@@ -135,40 +90,32 @@ contract Arb is DyDxFlashLoan, Ownable {
     /**
         sweep entire balance on the arb contract back to contract owner
      */
-    function withdrawBalance() public payable onlyOwner {
+    function withdrawBalance(address _token) public payable onlyOwner {
         // withdraw all ETH
         msg.sender.call{ value: address(this).balance }("");
         // withdraw all x ERC20 tokens
-        dai.transfer(msg.sender, dai.balanceOf(address(this)));
+        IERC20(_token).transfer(msg.sender, IERC20(_token).balanceOf(address(this)));
     }
 
     /**
         Using a WETH wrapper here since there are no direct ETH pairs in Uniswap v2
         and sushiswap v1 is based on uniswap v2
      */
-    function getPathForETHToToken(address ERC20Token) private view returns (address[] memory) {
+    function getPathForTokenToToken(
+      address _token1, 
+      address _token2
+    ) private view returns (address[] memory) {
         address[] memory path = new address[](2);
-        path[0] = uniswapV2Router.WETH();
-        path[1] = ERC20Token;
+        path[0] = _token1;
+        path[1] = _token2;
     
-        return path;
-    }
-
-    /**
-        Using a WETH wrapper to convert ERC20 token back into ETH
-     */
-     function getPathForTokenToETH(address ERC20Token) private view returns (address[] memory) {
-        address[] memory path = new address[](2);
-        path[0] = ERC20Token;
-        path[1] = sushiswapV1Router.WETH();
-        
         return path;
     }
 
     /**
         helper function to check ERC20 to ETH conversion rate
      */
-    function getEstimatedETHForToken(uint _tokenAmount, address ERC20Token) public view returns (uint[] memory) {
-        return uniswapV2Router.getAmountsOut(_tokenAmount, getPathForTokenToETH(ERC20Token));
+    function getEstimatedTokenForToken(uint _tokenAmount, address _token1, address _token2) public view returns (uint[] memory) {
+        return uniswapV2Router.getAmountsOut(_tokenAmount, getPathForTokenToToken(_token1, _token2));
     }
 }
