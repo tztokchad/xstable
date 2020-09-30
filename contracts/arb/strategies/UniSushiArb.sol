@@ -19,6 +19,7 @@ pragma experimental ABIEncoderV2;
 
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
 import "../../interface/IUniswapV2Router.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -54,11 +55,13 @@ contract UniSushiArb is Ownable {
       uint256 amountToTrade,
       address token1,
       address token2,
-      uint256 tokensOut
+      uint256 tokensOut1,
+      uint256 tokensOut2
     ) public {
         // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
         try uniswapV2Router.swapExactTokensForTokens(
             amountToTrade, 
+            tokensOut1,
             getPathForTokenToToken(token1, token2), 
             address(this), 
             deadline
@@ -67,15 +70,15 @@ contract UniSushiArb is Ownable {
             // error handling when arb failed due to trade 1
         }
         
-        uint256 tokenAmountInWEI = tokensOut.mul(10 ** 18); //convert into Wei
-        uint256 estimatedETH = getEstimatedTokenForToken(tokensOut, token1, token2)[0]; // check how much token2 you'll get for x number of token1
+        uint256 tokenAmountInWEI = tokensOut2.mul(10 ** 18); //convert into Wei
+        uint256 estimatedETH = getEstimatedTokenForToken(tokensOut2, token1, token2)[0]; // check how much token2 you'll get for x number of token1
         
         // grant uniswap / sushiswap access to your token, DAI used since we're swapping DAI back into ETH
-        dai.approve(address(uniswapV2Router), tokenAmountInWEI);
-        dai.approve(address(sushiswapV1Router), tokenAmountInWEI);
+        IERC20(token2).approve(address(uniswapV2Router), tokenAmountInWEI);
+        IERC20(token2).approve(address(sushiswapV1Router), tokenAmountInWEI);
 
         // Trade 2: Execute swap of the ERC20 token back into ETH on Sushiswap to complete the arb
-        try sushiswapV1Router.swapExactTokensForETH (
+        try sushiswapV1Router.swapExactTokensForTokens (
             tokenAmountInWEI, 
             estimatedETH, 
             getPathForTokenToToken(token1, token2), 
