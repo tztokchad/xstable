@@ -17,13 +17,15 @@ pragma experimental ABIEncoderV2;
     - ETH:                                  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
 */
 
+import "./FlashLoanStrategy.sol";
+
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
 import "../../interface/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract UniSushiArb is Ownable {
+contract UniSushiArb is FlashLoanStrategy, Ownable {
 
     using SafeMath for uint256;
     IUniswapV2Router02 uniswapV2Router;
@@ -52,15 +54,15 @@ contract UniSushiArb is Ownable {
         UniswapV2 -> SushiswapV1 example below
      */
     function execute(
-      uint256 amountToTrade,
-      address token1,
-      address token2,
-      uint256 tokensOut1,
-      uint256 tokensOut2
-    ) public {
+      bytes memory strategyData
+    ) 
+    override 
+    public  {
+        (uint256 tokensIn, address token1, address token2, uint256 tokensOut1, uint256 tokensOut2) = abi
+            .decode(strategyData, (uint256, address, address, uint256, uint256));
         // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
         try uniswapV2Router.swapExactTokensForTokens(
-            amountToTrade, 
+            tokensIn, 
             tokensOut1,
             getPathForTokenToToken(token1, token2), 
             address(this), 
@@ -71,7 +73,7 @@ contract UniSushiArb is Ownable {
         }
         
         uint256 tokenAmountInWEI = tokensOut2.mul(10 ** 18); //convert into Wei
-        uint256 estimatedETH = getEstimatedTokenForToken(tokensOut2, token1, token2)[0]; // check how much token2 you'll get for x number of token1
+        uint256 estimateToken = getEstimatedTokenForToken(tokensOut2, token1, token2)[0]; // check how much token2 you'll get for x number of token1
         
         // grant uniswap / sushiswap access to your token, DAI used since we're swapping DAI back into ETH
         IERC20(token2).approve(address(uniswapV2Router), tokenAmountInWEI);
@@ -80,7 +82,7 @@ contract UniSushiArb is Ownable {
         // Trade 2: Execute swap of the ERC20 token back into ETH on Sushiswap to complete the arb
         try sushiswapV1Router.swapExactTokensForTokens (
             tokenAmountInWEI, 
-            estimatedETH, 
+            estimateToken, 
             getPathForTokenToToken(token1, token2), 
             address(this), 
             deadline

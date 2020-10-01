@@ -131,8 +131,8 @@ contract XStable is Ownable {
         // Transfer lpToken to XStable
         require(lpToken.transferFrom(msg.sender, address(this), _amount), "Error with token transfer");
 
-        // Retrieve the virtual price for this lp token
-        uint256 virtualPrice = ICurve(_swap).get_virtual_price();
+        // Retrieve the virtual price for XSUSD after user's deposit
+        uint256 virtualPrice = getVirtualPrice();
 
         // Amount of XSUsd tokens to mint in wei = amount of lp tokens to deposit * virtual price
         mintableXSUSDInWei = _amount.mul(virtualPrice).div(10 ** 18);
