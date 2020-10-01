@@ -77,6 +77,7 @@ contract Arb is DyDxFlashLoan, Ownable {
 
         // execute arbitrage strategy
         try FlashLoanStrategy(strategy).execute(strategyData) {
+          FlashLoanStrategy(strategy).withdrawBalance(flashToken);
         } catch Error(string memory) {
             // Reverted with a reason string provided
         } catch (bytes memory) {
