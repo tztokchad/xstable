@@ -1,22 +1,6 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-// Source: https://github.com/fifikobayashi/Flash-Arb-Trader
-
-/**
-    Ropsten instances: 
-    - Uniswap V2 Router:                    0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-    - Sushiswap V1 Router:                  No official sushi routers on testnet
-    - DAI:                                  0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108
-    - ETH:                                  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
-    
-    Mainnet instances:
-    - Uniswap V2 Router:                    0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-    - Sushiswap V1 Router:                  0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F
-    - DAI:                                  0x6B175474E89094C44Da98b954EedeAC495271d0F
-    - ETH:                                  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
-*/
-
 import "./FlashLoanStrategy.sol";
 
 // importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
