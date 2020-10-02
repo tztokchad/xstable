@@ -33,34 +33,49 @@ contract CrvLpArb is FlashLoanStrategy, Ownable {
     public  {
         (
           address _curveSwap1,
-          int128 _swap1_from,
-          int128 _swap1_to,
+          int128 _swap_from,
+          int128 _swap_to,
+          uint256 _swap1_dx,
+          uint256 _swap1_min_dy,
           address _curveSwap2,
-          int128 _swap2_from,
-          int128 _swap2_to
+          uint256 _swap2_min_dy
         ) = abi.decode(
           strategyData, 
           (
             address,
             int128,
             int128,
+            uint256,
+            uint256,
             address,
-            int128,
-            int128
+            uint256
           )
         );
 
       require(_isValidCurveSwap(_curveSwap1), "Invalid swap1 address");
       require(_isValidCurveSwap(_curveSwap2), "Invalid swap2 address");
 
-      require(_isValidSwapCoin(_curveSwap1, _swap1_from), "Invalid swap1 from");
-      require(_isValidSwapCoin(_curveSwap1, _swap1_to), "Invalid swap1 to");
-
-      require(_isValidSwapCoin(_curveSwap2, _swap1_from), "Invalid swap2 from");
-      require(_isValidSwapCoin(_curveSwap2, _swap1_to), "Invalid swap2 to");
+      require(_isValidSwapCoin(_curveSwap1, _swap_from), "Invalid swap from");
+      require(_isValidSwapCoin(_curveSwap1, _swap_to), "Invalid swap to");
 
       ICurve curveSwap1 = ICurve(_curveSwap1);
       ICurve curveSwap2 = ICurve(_curveSwap2);
+
+      // Complete swap1 
+      curveSwap1.exchange(
+        _swap_from,
+        _swap_to,
+        _swap1_dx,
+        _swap1_min_dy
+      );
+
+      // Complete swap2
+      curveSwap2.exchange(
+        _swap_to,
+        _swap_from,
+        IERC20(curveSwap2.coins(_swap_to)).balanceOf(address(this)),
+        _swap2_min_dy
+      );
     }
 
     /**
