@@ -2,7 +2,13 @@ pragma solidity ^0.6.10;
 
 import "./FlashLoanStrategy.sol";
 
-contract UniBalArb is FlashLoanStrategy {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract UniBalArb is FlashLoanStrategy, Ownable {
+
+    using SafeMath for uint256;
 
     function execute(
       bytes memory strategyData

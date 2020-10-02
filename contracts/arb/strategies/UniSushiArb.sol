@@ -30,7 +30,6 @@ contract UniSushiArb is FlashLoanStrategy, Ownable {
     using SafeMath for uint256;
     IUniswapV2Router02 uniswapV2Router;
     IUniswapV2Router02 sushiswapV1Router;
-    uint deadline;
     
     /**
         Initialize deployment parameters
@@ -44,9 +43,6 @@ contract UniSushiArb is FlashLoanStrategy, Ownable {
       // instantiate SushiswapV1 and UniswapV2 Router02
       sushiswapV1Router = IUniswapV2Router02(address(_sushiswapV1Router));
       uniswapV2Router = IUniswapV2Router02(address(_uniswapV2Router));
-
-      // setting deadline to avoid scenario where miners hang onto it and execute at a more profitable time
-      deadline = block.timestamp + 300; // 5 minutes
     }
 
     /**
@@ -66,7 +62,7 @@ contract UniSushiArb is FlashLoanStrategy, Ownable {
             tokensOut1,
             getPathForTokenToToken(token1, token2), 
             address(this), 
-            deadline
+            block.timestamp + 300
         ){
         } catch {
             // error handling when arb failed due to trade 1
@@ -84,8 +80,8 @@ contract UniSushiArb is FlashLoanStrategy, Ownable {
             tokenAmountInWEI, 
             estimateToken, 
             getPathForTokenToToken(token1, token2), 
-            address(this), 
-            deadline
+            address(this),  
+            block.timestamp + 300
         ){
         } catch {
             // error handling when arb failed due to trade 2    

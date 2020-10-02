@@ -2,6 +2,9 @@ pragma solidity ^0.6.10;
 
 interface ICurve {
     // solium-disable-next-line mixedcase
+    function coins(int128 i) external view returns(address _coin);
+
+    // solium-disable-next-line mixedcase
     function get_dy_underlying(int128 i, int128 j, uint256 dx) external view returns(uint256 dy);
 
     // solium-disable-next-line mixedcase
