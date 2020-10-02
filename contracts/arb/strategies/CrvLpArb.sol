@@ -62,7 +62,7 @@ contract CrvLpArb is FlashLoanStrategy, Ownable {
       ICurve curveSwap2 = ICurve(_curveSwap2);
 
       // Complete swap1 
-      curveSwap1.exchange(
+      curveSwap1.exchange_underlying(
         _swap_from,
         _swap_to,
         _swap1_dx,
@@ -70,7 +70,7 @@ contract CrvLpArb is FlashLoanStrategy, Ownable {
       );
 
       // Complete swap2
-      curveSwap2.exchange(
+      curveSwap2.exchange_underlying(
         _swap_to,
         _swap_from,
         IERC20(curveSwap2.coins(_swap_to)).balanceOf(address(this)),
