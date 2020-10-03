@@ -44,6 +44,7 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
         ) = abi.decode(
           strategyData, 
           (
+            address,
             bool,
             uint256,
             uint256,
@@ -55,7 +56,7 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
           )
         );
 
-        IUniswapV2Router uniswapV2Router = IUniswapV2Router(router);
+        IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(router);
 
         if (isUniToBal) {
           // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
