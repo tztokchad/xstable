@@ -31,16 +31,18 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
     override 
     public  {
         (
-          uint256 uniTokensIn,
-          uint256 uniMinTokensOut,
+          bool isUniToBal,
+          uint256 token1In,
+          uint256 minToken2Out,
           address token1,
           address token2,
           address bPool,
-          uint256 balMinTokensOut,
+          uint256 minToken1Out,
           uint256 balMaxPrice
         ) = abi.decode(
           strategyData, 
           (
+            bool,
             uint256,
             uint256,
             address,
@@ -51,27 +53,51 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
           )
         );
 
-        // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
-        try uniswapV2Router.swapExactTokensForTokens(
-            uniTokensIn, 
-            uniMinTokensOut,
-            getPathForTokenToToken(token1, token2), 
-            address(this), 
-            block.timestamp + 300
-        ){
-        } catch {
-            // error handling
-        }
+        if (isUniToBal) {
+          // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
+          try uniswapV2Router.swapExactTokensForTokens(
+              token1In, 
+              minToken2Out,
+              getPathForTokenToToken(token1, token2), 
+              address(this), 
+              block.timestamp + 300
+          ){
+          } catch {
+              // error handling
+          }
 
-        try IBPool(bPool).swapExactAmountIn(
-          token2,
-          IERC20(token2).balanceOf(address(this)),
-          token1,
-          balMinTokensOut,
-          balMaxPrice
-        ) {
-        } catch {
-             // error handling
+          try IBPool(bPool).swapExactAmountIn(
+            token2,
+            IERC20(token2).balanceOf(address(this)),
+            token1,
+            minToken1Out,
+            balMaxPrice
+          ) {
+          } catch {
+              // error handling
+          }
+        } else {
+          try IBPool(bPool).swapExactAmountIn(
+            token1,
+            token1In,
+            token2,
+            minToken2Out,
+            balMaxPrice
+          ) {
+          } catch {
+              // error handling
+          }
+
+          try uniswapV2Router.swapExactTokensForTokens(
+              IERC20(token2).balanceOf(address(this)), 
+              minToken2Out,
+              getPathForTokenToToken(token2, token1), 
+              address(this), 
+              block.timestamp + 300
+          ){
+          } catch {
+              // error handling
+          }
         }
     }
 
