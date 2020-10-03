@@ -12,17 +12,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract UniBalArb is FlashLoanStrategy, Ownable {
 
     using SafeMath for uint256;
-    IUniswapV2Router02 uniswapV2Router;
-    
-    /**
-        Initialize deployment parameters
-     */
-    constructor (
-        IUniswapV2Router02 _uniswapV2Router
-    )
-    public {
-      // instantiate SushiswapV1 and UniswapV2 Router02
-      uniswapV2Router = IUniswapV2Router02(address(_uniswapV2Router));
+
+    // Whitelisted uniswap v2 routers
+    mapping (address => bool) uniV2Routers;
+
+    event NewUniV2Router(address _router);
+
+    function addUniV2Router(address _router) 
+    public 
+    onlyOwner {
+      require(!uniV2Routers[_router], "router already added");
+      uniV2Routers[_router] = true;
+      emit NewUniV2Router(_router);
     }
 
     function execute(
@@ -31,6 +32,7 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
     override 
     public  {
         (
+          address router,
           bool isUniToBal,
           uint256 token1In,
           uint256 minToken2Out,
@@ -52,6 +54,8 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
             uint256
           )
         );
+
+        IUniswapV2Router uniswapV2Router = IUniswapV2Router(router);
 
         if (isUniToBal) {
           // Trade 1: Execute swap of token1 into designated token2 on UniswapV2
