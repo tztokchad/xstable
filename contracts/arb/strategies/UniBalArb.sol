@@ -66,6 +66,7 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
               // error handling
           }
 
+          // Trade 1: Execute swap of token2 into designated token1 on Balancer
           try IBPool(bPool).swapExactAmountIn(
             token2,
             IERC20(token2).balanceOf(address(this)),
@@ -77,6 +78,7 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
               // error handling
           }
         } else {
+          // Trade 1: Execute swap of token1 into designated token2 on Balancer
           try IBPool(bPool).swapExactAmountIn(
             token1,
             token1In,
@@ -88,6 +90,7 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
               // error handling
           }
 
+          // Trade 2: Execute swap of token2 into designated token1 on UniswapV2
           try uniswapV2Router.swapExactTokensForTokens(
               IERC20(token2).balanceOf(address(this)), 
               minToken2Out,
