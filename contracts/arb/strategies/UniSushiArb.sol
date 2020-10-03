@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 
 import "./FlashLoanStrategy.sol";
 
-// importing both Sushiswap V1 and Uniswap V2 Router02 dependencies
 import "../../interface/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -38,8 +37,7 @@ contract UniSushiArb is FlashLoanStrategy, Ownable {
         IUniswapV2Router02 _uniswapV2Router, 
         IUniswapV2Router02 _sushiswapV1Router
     )
-    public 
-    payable {
+    public {
       // instantiate SushiswapV1 and UniswapV2 Router02
       sushiswapV1Router = IUniswapV2Router02(address(_sushiswapV1Router));
       uniswapV2Router = IUniswapV2Router02(address(_uniswapV2Router));
