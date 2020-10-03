@@ -1,0 +1,11 @@
+{
+  "name": "@xstable/arb-js",
+  "version": "1.0.0",
+  "description": "JS based client to run arbs based on events across Uniswap V2 Router, Balancer pool and Curve swap contracts.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "tztokchad <tz@dopex.io>",
+  "license": "ISC"
+}
