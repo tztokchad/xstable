@@ -12,19 +12,26 @@ contract CrvLpArb is FlashLoanStrategy, Ownable {
 
     using SafeMath for uint256;
 
-    ICurve constant internal curveCompound  = ICurve(0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56);
-    ICurve constant internal curveY         = ICurve(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51);
-    ICurve constant internal curveBinance   = ICurve(0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27);
-    ICurve constant internal curveSynthetix = ICurve(0xA5407eAE9Ba41422680e2e00537571bcC53efBfD);
-    ICurve constant internal curvePAX       = ICurve(0x06364f10B501e868329afBc005b3492902d6C763);
+    address[] public curveSwaps;
 
-    ICurve[5] internal curveSwaps = [
-      curveCompound,
-      curveY,
-      curveBinance,
-      curveSynthetix,
-      curvePAX
-    ];
+    // Whitelisted curve swap addresses
+    mapping (address => bool) whitelistedCurveSwaps;
+
+    event NewWhitelistedSwap(address _swap);
+
+    /**
+    * Adds a new curve swap address to whitelist
+    * @param _swap Curve swap address
+    */
+    function addCurveSwap(address _swap)
+    public
+    onlyOwner {
+      require(!whitelistedCurveSwaps[_swap], "swap already whitelisted");
+      whitelistedCurveSwaps[_swap] = true;
+      curveSwaps.push(_swap);
+      
+      emit NewWhitelistedSwap(_swap);
+    }
 
     function execute(
       bytes memory strategyData
@@ -88,7 +95,7 @@ contract CrvLpArb is FlashLoanStrategy, Ownable {
     view
     returns (bool) {
       for (uint8 i = 0; i < curveSwaps.length; i++) {
-        if (address(curveSwaps[i]) == _swap)
+        if (curveSwaps[i] == _swap)
           return true;
       }
       return false;

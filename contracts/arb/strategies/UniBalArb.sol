@@ -18,6 +18,10 @@ contract UniBalArb is FlashLoanStrategy, Ownable {
 
     event NewUniV2Router(address _router);
 
+    /**
+    * Adds uni v2 router to whitelist
+    * @param _router UniV2Router address
+    */
     function addUniV2Router(address _router) 
     public 
     onlyOwner {
