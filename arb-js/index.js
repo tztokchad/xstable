@@ -1,4 +1,4 @@
-require("dotenv");
+require("dotenv").config();
 
 const Web3 = require("web3");
 const HDWalletProvider = require("truffle-hdwallet-provider");
@@ -11,6 +11,7 @@ const {
   PRIVATE_KEY,
   WEB3_URL,
   TOKEN_LIST,
+  STRAT_LIST,
   PROFIT_THRESHOLD,
   GAS_PRICE
 } = process.env;
@@ -23,6 +24,12 @@ const {
     throw new Error(
       "no auth set. Please set a mnemonic or private key in .env"
     );
+  const config = {
+    tokens: TOKEN_LIST,
+    strats: STRAT_LIST,
+    profitThreshold: PROFIT_THRESHOLD,
+    gasPrice: GAS_PRICE
+  };
   const events = new Events(web3);
-  const arb = new Arb(web3, events);
+  const arb = new Arb(web3, events, config);
 })();
