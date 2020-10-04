@@ -28,7 +28,8 @@ const {
     tokens: TOKEN_LIST,
     strats: STRAT_LIST,
     profitThreshold: PROFIT_THRESHOLD,
-    gasPrice: GAS_PRICE
+    gasPrice: GAS_PRICE,
+    chainId: await web3.eth.getChainId()
   };
   const events = new Events(web3);
   const arb = new Arb(web3, events, config);
