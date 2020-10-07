@@ -7,7 +7,7 @@ const {
   Router, 
   Trade, 
   TradeType
- } = require("@uniswap/sdk");
+ } = require("@uniswap/sdk"); 
  const UniRouter = require('./unirouter')
 
 const {
@@ -33,7 +33,7 @@ function Arb(web3, events, config) {
    * Initalizes arbitrage strategies
    */
   this.arb = async () => {
-    uniRouter = new UniRouter(web3, _getArbContractInstance());
+    uniRouter = new UniRouter(web3, _getArbContractInstance(), config);
     events.subscribeToNewBlocks()
       .on("connected", subscriptionId => console.log('Listening to block headers'))
       .on("data", blockHeader => {

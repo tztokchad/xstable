@@ -17,6 +17,15 @@ const { getErc20Decimals, getStrategyContractAddress } = require("../util");
 const BigNumber = require("bignumber.js");
 
 function UniRouterArb(web3, arbInstance) {
+  const {
+    strats,
+    profitThreshold,
+    gasPrice,
+    chainId,
+    router1,
+    router2,
+    uniArbPairs
+  } = config;
   /**
    * A naive brute forcing arb algo which starts with 1k usdc worth of token2 and
    * checks for arb opps by going token1 -> token2 in router1 and token2 -> token1 in router2
