@@ -28,6 +28,9 @@ function UniRouterArb(web3, arbInstance) {
     router2InitCodeHash,
     uniArbPairs
   } = config;
+  let token1Decimals;
+  let token2Decimals;
+  let startingCapital = 1000;
   /**
    * A naive brute forcing arb algo which starts with 1k usdc worth of token2 and
    * checks for arb opps by going token1 -> token2 in router1 and token2 -> token1 in router2
@@ -49,60 +52,76 @@ function UniRouterArb(web3, arbInstance) {
       }
 
       // Loop over 10x increments of input amount, starting from 1k USDC until 1m USDC
-      let startingCapital = 1000;
-      let token1Decimals = await getErc20Decimals(token1);
-      let token2Decimals = await getErc20Decimals(token2);
+      token1Decimals = await getErc20Decimals(token1);
+      token2Decimals = await getErc20Decimals(token2);
       for (let i = 0; i < 4; i++) {
-        let token1ToToken2OutputAmount = new BigNumber(startingCapital)
-          .mul(new BigNumber(10).exponentiatedBy(i))
-          .mul(new BigNumber(10).exponentiatedBy(token2Decimals))
-          .toFixed();
-
-        const token1ToToken2InputAmount = await _getAmountsForUniTrade(
-          TradeType.EXACT_OUTPUT,
-          token1,
-          token2,
-          token1ToToken2OutputAmount,
-          "inputAmount"
-        );
-        const token2ToToken1OutputAmount = await _getAmountsForUniTrade(
-          TradeType.EXACT_INPUT,
-          token2,
-          token1,
-          token1ToToken2OutputAmount,
-          "outputAmount"
-        );
-
-        if (
-          new BigNumber(token2ToToken1OutputAmount).isGreaterThan(
-            new BigNumber(token1ToToken2InputAmount).plus(
-              new BigNumber(profitThreshold).mul(10 ** token1Decimals)
-            )
-          )
-        ) {
-          // Successful arb opp. Make trade
-          await arbInstance.methods
-            .initFlashloan(
-              token2,
-              token1ToToken2OutputAmount,
-              getStrategyContractAddress(STRAT_UNI_ROUTER),
-              web3.eth.abi.encodeParameters(
-                ["uint256", "address", "address", "uint256", "uint256"],
-                [
-                  token1ToToken2InputAmount,
-                  token1,
-                  token2,
-                  token1ToToken2OutputAmount,
-                  token2ToToken1OutputAmount
-                ]
-              )
-            )
-            .send({
-              gasPrice
-            });
-        }
+        // router1 -> router2 -> router1
+        await _runUniArbLoop(i, true);
+        // router2 -> router1 -> router2
+        await _runUniArbLoop(i, false);
       }
     }
+  };
+
+  /**
+   * Run uni router arb logic
+   * @param {*} iterator Iterator for starting capital multiple
+   * @param {*} isFromRouter1 Whether from tx originates from router1
+   */
+  const _runUniArbLoop = (
+    iterator,
+    isFromRouter1
+  ) => {
+      let token1ToToken2OutputAmount = new BigNumber(startingCapital)
+        .mul(new BigNumber(10).exponentiatedBy(i))
+        .mul(new BigNumber(10).exponentiatedBy(token2Decimals))
+        .toFixed();
+
+      const token1ToToken2InputAmount = await _getAmountsForUniTrade(
+        TradeType.EXACT_OUTPUT,
+        token1,
+        token2,
+        token1ToToken2OutputAmount,
+        "inputAmount",
+        isFromRouter1
+      );
+      const token2ToToken1OutputAmount = await _getAmountsForUniTrade(
+        TradeType.EXACT_INPUT,
+        token2,
+        token1,
+        token1ToToken2OutputAmount,
+        "outputAmount",
+        !isFromRouter1
+      );
+
+      if (
+        new BigNumber(token2ToToken1OutputAmount).isGreaterThan(
+          new BigNumber(token1ToToken2InputAmount).plus(
+            new BigNumber(profitThreshold).mul(10 ** token1Decimals)
+          )
+        )
+      ) {
+        // Successful arb opp. Make trade
+        await arbInstance.methods
+          .initFlashloan(
+            token2,
+            token1ToToken2OutputAmount,
+            getStrategyContractAddress(STRAT_UNI_ROUTER),
+            web3.eth.abi.encodeParameters(
+              ["uint256", "address", "address", "uint256", "uint256"],
+              [
+                token1ToToken2InputAmount,
+                token1,
+                token2,
+                token1ToToken2OutputAmount,
+                token2ToToken1OutputAmount
+              ]
+            )
+          )
+          .send({
+            gasPrice
+          });
+      }
   };
 
   /**
