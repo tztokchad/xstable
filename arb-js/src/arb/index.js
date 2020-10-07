@@ -1,4 +1,13 @@
-const { ChainId, Token, TokenAmount, WETH, Fetcher, Router, Trade, TradeType } = require("@uniswap/sdk");
+const { 
+  ChainId, 
+  Token, 
+  TokenAmount, 
+  WETH, 
+  Fetcher, 
+  Router, 
+  Trade, 
+  TradeType
+ } = require("@uniswap/sdk");
 const BigNumber = require("bignumber.js");
 
 const {
@@ -11,11 +20,13 @@ const {
   ARB_SRC_TYPE_UNI,
   stratAbis,
   abi_erc20,
+  abi_arb,
   TOKEN_USDC
 } = require("../util/constants");
 
 function Arb(web3, events, config) {
   const { strats, profitThreshold, gasPrice, chainId, router1, router2, uniArbPairs } = config;
+  let arbInstance;
 
   /**
    * Initalizes arbitrage strategies
@@ -69,7 +80,7 @@ function Arb(web3, events, config) {
           .mul(new BigNumber(10).exponentiatedBy(token2Decimals))
           .toFixed();  
 
-        const inputAmountToken1ToToken2 = 
+        const token1ToToken2InputAmount = 
           await _getAmountsForUniTrade(
             TradeType.EXACT_OUTPUT, 
             token1, 
@@ -77,7 +88,7 @@ function Arb(web3, events, config) {
             token1ToToken2OutputAmount, 
             'inputAmount'
           );
-        const outputAmountToken2ToToken1 = 
+        const token2ToToken1OutputAmount = 
           await _getAmountsForUniTrade(
             TradeType.EXACT_INPUT,
             token2,
@@ -86,8 +97,28 @@ function Arb(web3, events, config) {
             'outputAmount'
           );
 
-        if (new BigNumber(outputAmountToken2ToToken1).isGreaterThan(inputAmountToken1ToToken2)) {
+        if (new BigNumber(token2ToToken1OutputAmount).isGreaterThan(token1ToToken2InputAmount)) {
           // Successful arb opp. Make trade
+          await arb.methods.initFlashloan(
+            token2,
+            token1ToToken2OutputAmount,
+            _getStrategyContractAddress(STRAT_UNI_SUSHI),
+            web3.eth.abi.encodeParameters([
+              'uint256', 
+              'address', 
+              'address', 
+              'uint256', 
+              'uint256'
+            ], [
+              token1ToToken2InputAmount,
+              token1,
+              token2,
+              token1ToToken2OutputAmount,
+              token2ToToken1OutputAmount
+            ])
+          ).send({
+            gasPrice
+          });
         }
       }
     }
@@ -181,6 +212,16 @@ function Arb(web3, events, config) {
    * @return From/to contract ABIs
    */
   const _getStratAbis = _strat => stratAbis[_strat]
+
+  /**
+   * Returns an Arb contract instance
+   * @return Initalized Arb contract
+   */
+  const _getArbContractInstance = () => {
+    if (!arbInstance)
+      arbInstance = new web3.eth.Contract(abi_arb, abi_arb.networks[chainId].address);
+    return arbInstance;
+  }
 
 }
 

@@ -1,5 +1,6 @@
 const abi_uniswapv2Router02 = require("../abi/UniswapV2Router02.json");
 const abi_erc20 = require("../abi/ERC20.json");
+const abi_arb = require("../abi/Arb.json");
 
 // Arb strategies
 const STRAT_UNI_SUSHI = "uni_sushi";
@@ -32,5 +33,6 @@ module.exports = {
   ARB_SRC_TYPE_UNI,
   stratAbis,
   abi_erc20,
-  TOKEN_USDC
+  TOKEN_USDC,
+  abi_arb
 };
