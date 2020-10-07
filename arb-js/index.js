@@ -10,10 +10,12 @@ const {
   MNEMONIC,
   PRIVATE_KEY,
   WEB3_URL,
-  TOKEN_LIST,
   STRAT_LIST,
   PROFIT_THRESHOLD,
-  GAS_PRICE
+  GAS_PRICE,
+  ROUTER_1,
+  ROUTER_2,
+  UNI_ARB_PAIRS
 } = process.env;
 
 (async () => {
@@ -29,7 +31,10 @@ const {
     strats: STRAT_LIST,
     profitThreshold: PROFIT_THRESHOLD,
     gasPrice: GAS_PRICE,
-    chainId: await web3.eth.getChainId()
+    chainId: await web3.eth.getChainId(),
+    router1: ROUTER_1,
+    router2: ROUTER_2,
+    uniArbPairs: UNI_ARB_PAIRS
   };
   const events = new Events(web3);
   const arb = new Arb(web3, events, config);

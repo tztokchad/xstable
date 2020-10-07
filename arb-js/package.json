@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@uniswap/sdk": "^3.0.3",
+    "bignumber.js": "^9.0.1",
     "commander": "^6.1.0",
     "dotenv": "^8.2.0",
     "truffle-hdwallet-provider": "^1.0.17",
