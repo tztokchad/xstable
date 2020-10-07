@@ -13,7 +13,7 @@ const {
 const {
   STRAT_CRV_LP,
   STRAT_UNI_BAL,
-  STRAT_UNI_SUSHI,
+  STRAT_UNI_ROUTER,
   STRAT_LIST,
   ARB_SRC_TYPE_BAL,
   ARB_SRC_TYPE_CRV,
@@ -41,7 +41,7 @@ function Arb(web3, events, config) {
           if (!isValidStrat(strat))
             throw new Error(`Invalid strat: ${strat}. Please update STRAT_LIST`)
           
-          if (strat === STRAT_UNI_SUSHI)
+          if (strat === STRAT_UNI_ROUTER)
             await uniRouter.arb();
         }
       })

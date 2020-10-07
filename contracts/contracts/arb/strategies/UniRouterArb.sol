@@ -24,23 +24,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract UniSushiArb is FlashLoanStrategy, Ownable {
+contract UniRouterArb is FlashLoanStrategy, Ownable {
 
     using SafeMath for uint256;
     IUniswapV2Router02 uniswapV2Router;
-    IUniswapV2Router02 sushiswapV1Router;
+    IUniswapV2Router02 uniswapV2Router_2;
     
     /**
         Initialize deployment parameters
      */
     constructor (
         IUniswapV2Router02 _uniswapV2Router, 
-        IUniswapV2Router02 _sushiswapV1Router
+        IUniswapV2Router02 _uniswapV2Router_2
     )
     public {
-      // instantiate SushiswapV1 and UniswapV2 Router02
-      sushiswapV1Router = IUniswapV2Router02(address(_sushiswapV1Router));
+      // instantiate UniswapV2 Routers
       uniswapV2Router = IUniswapV2Router02(address(_uniswapV2Router));
+      uniswapV2Router_2 = IUniswapV2Router02(address(_uniswapV2Router_2));
     }
 
     /**
@@ -71,10 +71,10 @@ contract UniSushiArb is FlashLoanStrategy, Ownable {
         
         // grant uniswap / sushiswap access to your token, DAI used since we're swapping DAI back into ETH
         IERC20(token2).approve(address(uniswapV2Router), tokenAmountInWEI);
-        IERC20(token2).approve(address(sushiswapV1Router), tokenAmountInWEI);
+        IERC20(token2).approve(address(uniswapV2Router_2), tokenAmountInWEI);
 
         // Trade 2: Execute swap of the ERC20 token back into ETH on Sushiswap to complete the arb
-        try sushiswapV1Router.swapExactTokensForTokens (
+        try uniswapV2Router_2.swapExactTokensForTokens (
             tokenAmountInWEI, 
             estimateToken, 
             getPathForTokenToToken(token1, token2), 
