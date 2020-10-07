@@ -22,8 +22,10 @@ function UniRouterArb(web3, arbInstance) {
     profitThreshold,
     gasPrice,
     chainId,
-    router1,
-    router2,
+    router1FactoryAddress,
+    router1InitCodeHash,
+    router2FactoryAddress,
+    router2InitCodeHash,
     uniArbPairs
   } = config;
   /**
@@ -31,11 +33,6 @@ function UniRouterArb(web3, arbInstance) {
    * checks for arb opps by going token1 -> token2 in router1 and token2 -> token1 in router2
    */
   this.arb = async () => {
-    // From and to ABIs are the same
-    const abi = stratAbis(STRAT_UNI_ROUTER).from;
-    const router1 = new web3.eth.Contract(abi, router1);
-    const router2 = new web3.eth.Contract(abi, router2);
-
     const arbPairs = uniArbPairs.split(",");
 
     for (let pair of arbPairs) {
@@ -110,6 +107,7 @@ function UniRouterArb(web3, arbInstance) {
    * @param _token1 Token 1 address
    * @param _token2 Token 2 address
    * @param _inputAmount Input amount
+   * @param _isRouter1 Is this trade happening on router 1
    * @return Token 2 output amount
    */
   const _getAmountsForUniTrade = async (
@@ -117,7 +115,8 @@ function UniRouterArb(web3, arbInstance) {
     _token1,
     _token2,
     _amount,
-    _amountType
+    _amountType,
+    _isRouter1
   ) => {
     if (
       _tradeType !== TradeType.EXACT_INPUT &&
@@ -128,7 +127,12 @@ function UniRouterArb(web3, arbInstance) {
       throw new Error(`Invalid amount type: ${_amountType}`);
     const token1 = new Token(chainId, _token1, await getErc20Decimals(_token1));
     const token2 = new Token(chainId, _token2, await getErc20Decimals(_token2));
-    const pair = await Fetcher.fetchPairData(token1, token2);
+    const pair = await Fetcher.fetchPairData(
+      token1,
+      token2,
+      isRouter1 ? router1FactoryAddress : router2FactoryAddress,
+      isRouter1 ? router1InitCodeHash : router2InitCodeHash
+    );
     const route = new Route([pair], token2);
     const trade = new Trade(
       route,
