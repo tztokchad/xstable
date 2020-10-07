@@ -1,15 +1,11 @@
 const {
-  ChainId,
   Token,
   TokenAmount,
-  WETH,
   Fetcher,
-  Router,
   Trade,
   TradeType
 } = require("@uniswap/sdk");
 const {
-  stratAbis,
   STRAT_UNI_ROUTER,
   TOKEN_USDC
 } = require("../util/constants");
@@ -18,7 +14,6 @@ const BigNumber = require("bignumber.js");
 
 function UniRouterArb(web3, arbInstance) {
   const {
-    strats,
     profitThreshold,
     gasPrice,
     chainId,
