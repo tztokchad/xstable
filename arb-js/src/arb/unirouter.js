@@ -50,8 +50,9 @@ function UniRouterArb(web3, arbInstance) {
 
       // Loop over 10x increments of input amount, starting from 1k USDC until 1m USDC
       let startingCapital = 1000;
+      let token1Decimals = await getErc20Decimals(token1);
+      let token2Decimals = await getErc20Decimals(token2);
       for (let i = 0; i < 4; i++) {
-        let token2Decimals = await getErc20Decimals(token2);
         let token1ToToken2OutputAmount = new BigNumber(startingCapital)
           .mul(new BigNumber(10).exponentiatedBy(i))
           .mul(new BigNumber(10).exponentiatedBy(token2Decimals))
@@ -74,7 +75,9 @@ function UniRouterArb(web3, arbInstance) {
 
         if (
           new BigNumber(token2ToToken1OutputAmount).isGreaterThan(
-            token1ToToken2InputAmount
+            new BigNumber(token1ToToken2InputAmount).plus(
+              new BigNumber(profitThreshold).mul(10 ** token1Decimals)
+            )
           )
         ) {
           // Successful arb opp. Make trade
