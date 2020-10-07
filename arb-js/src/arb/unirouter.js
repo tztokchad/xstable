@@ -8,7 +8,11 @@ const {
   Trade,
   TradeType
 } = require("@uniswap/sdk");
-const { stratAbis, STRAT_UNI_SUSHI, TOKEN_USDC } = require("../util/constants");
+const {
+  stratAbis,
+  STRAT_UNI_ROUTER,
+  TOKEN_USDC
+} = require("../util/constants");
 const { getErc20Decimals, getStrategyContractAddress } = require("../util");
 const BigNumber = require("bignumber.js");
 
@@ -19,7 +23,7 @@ function UniRouterArb(web3, arbInstance) {
    */
   this.arb = async () => {
     // From and to ABIs are the same
-    const abi = stratAbis(STRAT_UNI_SUSHI).from;
+    const abi = stratAbis(STRAT_UNI_ROUTER).from;
     const router1 = new web3.eth.Contract(abi, router1);
     const router2 = new web3.eth.Contract(abi, router2);
 
@@ -72,7 +76,7 @@ function UniRouterArb(web3, arbInstance) {
             .initFlashloan(
               token2,
               token1ToToken2OutputAmount,
-              getStrategyContractAddress(STRAT_UNI_SUSHI),
+              getStrategyContractAddress(STRAT_UNI_ROUTER),
               web3.eth.abi.encodeParameters(
                 ["uint256", "address", "address", "uint256", "uint256"],
                 [
