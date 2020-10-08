@@ -62,11 +62,11 @@ function UniBalArb(web3, arbInstance) {
   /**
    * Run uni router arb logic
    * @param {*} iterator Iterator for starting capital multiple
-   * @param {*} isFromRouter1 Whether from tx originates from router1
+   * @param {*} isFromUni Whether from tx originates from uni
    */
   const _runUniBalArbLoop = (
     iterator,
-    isFromRouter1
+    isFromUni
   ) => {
       let token1ToToken2OutputAmount = new BigNumber(startingCapital)
         .mul(new BigNumber(10).exponentiatedBy(i))
@@ -77,7 +77,7 @@ function UniBalArb(web3, arbInstance) {
       let token1ToToken2InputAmount;
       let token2ToToken1OutputAmount;
 
-      if (isFromRouter1) {
+      if (isFromUni) {
         token1ToToken2InputAmount = await _getAmountsForUniTrade(
           TradeType.EXACT_OUTPUT,
           token1,
@@ -86,10 +86,24 @@ function UniBalArb(web3, arbInstance) {
           "inputAmount"
         );
         token2ToToken1OutputAmount = await _getAmountsForBalTrade(
+          "swapExactIn",
           token2,
           token1,
           token1ToToken2OutputAmount,
-          "outputAmount"
+        );
+      } else {
+        token1ToToken2InputAmount = await _getAmountsForBalTrade(
+          "swapExactOut",
+          token1,
+          token2,
+          token1ToToken2OutputAmount,
+        );
+        token2ToToken1OutputAmount = await _getAmountsForUniTrade(
+          TradeType.EXACT_INPUT,
+          token2,
+          token1,
+          token1ToToken2OutputAmount,
+          "inputAmount"
         );
       }
 
