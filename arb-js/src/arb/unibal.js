@@ -5,23 +5,24 @@ const {
   Trade,
   TradeType
 } = require("@uniswap/sdk");
+const sor = require("@balancer-labs/sor");
 const {
-  STRAT_UNI_ROUTER,
-  TOKEN_USDC
+  STRAT_UNI_BAL,
+  TOKEN_USDC,
+  MULTICALL
 } = require("../util/constants");
 const { getErc20Decimals, getStrategyContractAddress } = require("../util");
 const BigNumber = require("bignumber.js");
 
-function UniRouterArb(web3, arbInstance) {
+function UniBalArb(web3, arbInstance) {
   const {
     profitThreshold,
     gasPrice,
     chainId,
     router1FactoryAddress,
     router1InitCodeHash,
-    router2FactoryAddress,
-    router2InitCodeHash,
-    uniArbPairs
+    uniArbPairs,
+    uniBalPairs
   } = config;
   let token1Decimals;
   let token2Decimals;
@@ -51,9 +52,9 @@ function UniRouterArb(web3, arbInstance) {
       token2Decimals = await getErc20Decimals(token2);
       for (let i = 0; i < 4; i++) {
         // router1 -> router2 -> router1
-        await _runUniArbLoop(i, true);
+        await _runUniBalArbLoop(i, true);
         // router2 -> router1 -> router2
-        await _runUniArbLoop(i, false);
+        await _runUniBalArbLoop(i, false);
       }
     }
   };
@@ -63,7 +64,7 @@ function UniRouterArb(web3, arbInstance) {
    * @param {*} iterator Iterator for starting capital multiple
    * @param {*} isFromRouter1 Whether from tx originates from router1
    */
-  const _runUniArbLoop = (
+  const _runUniBalArbLoop = (
     iterator,
     isFromRouter1
   ) => {
@@ -72,22 +73,25 @@ function UniRouterArb(web3, arbInstance) {
         .mul(new BigNumber(10).exponentiatedBy(token2Decimals))
         .toFixed();
 
-      const token1ToToken2InputAmount = await _getAmountsForUniTrade(
-        TradeType.EXACT_OUTPUT,
-        token1,
-        token2,
-        token1ToToken2OutputAmount,
-        "inputAmount",
-        isFromRouter1
-      );
-      const token2ToToken1OutputAmount = await _getAmountsForUniTrade(
-        TradeType.EXACT_INPUT,
-        token2,
-        token1,
-        token1ToToken2OutputAmount,
-        "outputAmount",
-        !isFromRouter1
-      );
+
+      let token1ToToken2InputAmount;
+      let token2ToToken1OutputAmount;
+
+      if (isFromRouter1) {
+        token1ToToken2InputAmount = await _getAmountsForUniTrade(
+          TradeType.EXACT_OUTPUT,
+          token1,
+          token2,
+          token1ToToken2OutputAmount,
+          "inputAmount"
+        );
+        token2ToToken1OutputAmount = await _getAmountsForBalTrade(
+          token2,
+          token1,
+          token1ToToken2OutputAmount,
+          "outputAmount"
+        );
+      }
 
       if (
         new BigNumber(token2ToToken1OutputAmount).isGreaterThan(
@@ -101,7 +105,7 @@ function UniRouterArb(web3, arbInstance) {
           .initFlashloan(
             token2,
             token1ToToken2OutputAmount,
-            getStrategyContractAddress(STRAT_UNI_ROUTER),
+            getStrategyContractAddress(STRAT_UNI_BAL),
             web3.eth.abi.encodeParameters(
               ["uint256", "address", "address", "uint256", "uint256"],
               [
@@ -159,6 +163,46 @@ function UniRouterArb(web3, arbInstance) {
       _tradeType
     );
     return trade[_amountType].toSignificant(6);
+  };
+
+  /**
+   * Returns output amount for a bal trade between token1 and token2 for a given inputAmount
+   * @param _tradeType Exact in/out
+   * @param _token1 Token 1 address
+   * @param _token2 Token 2 address
+   * @param _amount Input amount
+   * @return Token 2 output amount
+   */
+  const _getAmountsForBalTrade = async (
+    _tradeType,
+    _token1,
+    _token2,
+    _amount
+  ) => {
+    if (
+      _tradeType !== 'swapExactIn' &&
+      _tradeType !== 'swapExactOut'
+    )
+      throw new Error(`Invalid trade type: ${_tradeType}`);
+    const data = await sor.getPoolsWithTokens(_token1, _token2);
+    const poolData = await sor.parsePoolDataOnChain(
+      data.pools, 
+      _token1, 
+      _token2, 
+      MULTICALL, 
+      web3.currentProvider
+    );
+
+    const sorSwaps = sor.smartOrderRouter(
+        poolData,
+        _tradeType,
+        _amount,
+        new BigNumber('10'),
+        0
+    );
+
+    const swaps = sor.formatSwapsExactAmountIn(sorSwaps, MAX_UINT, 0)
+    return sor.calcTotalOutput(swaps, poolData)
   };
 }
 

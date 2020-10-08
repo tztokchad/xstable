@@ -13,9 +13,12 @@ const {
   STRAT_LIST,
   PROFIT_THRESHOLD,
   GAS_PRICE,
-  ROUTER_1,
-  ROUTER_2,
-  UNI_ARB_PAIRS
+  ROUTER_1_FACTORY_ADDRESS,
+  ROUTER_1_INIT_CODE_HASH,
+  ROUTER_2_FACTORY_ADDRESS,
+  ROUTER_2_INIT_CODE_HASH,
+  UNI_ARB_PAIRS,
+  UNI_BAL_PAIRS
 } = process.env;
 
 (async () => {
@@ -32,9 +35,12 @@ const {
     profitThreshold: PROFIT_THRESHOLD,
     gasPrice: GAS_PRICE,
     chainId: await web3.eth.getChainId(),
-    router1: ROUTER_1,
-    router2: ROUTER_2,
-    uniArbPairs: UNI_ARB_PAIRS
+    router1FactoryAddress: ROUTER_1_FACTORY_ADDRESS,
+    router1InitCodeHash: ROUTER_1_INIT_CODE_HASH,
+    router2FactoryAddress: ROUTER_2_FACTORY_ADDRESS,
+    router2InitCodeHash: ROUTER_2_INIT_CODE_HASH,
+    uniArbPairs: UNI_ARB_PAIRS,
+    uniBalPairs: UNI_BAL_PAIRS
   };
   const events = new Events(web3);
   const arb = new Arb(web3, events, config);

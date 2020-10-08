@@ -8,7 +8,8 @@ const {
   Trade, 
   TradeType
  } = require("@uniswap/sdk"); 
- const UniRouter = require('./unirouter')
+ const UniRouterArb = require('./unirouter')
+ const UniBalArb = require('./unibal')
 
 const {
   STRAT_CRV_LP,
@@ -25,24 +26,37 @@ const {
 } = require("../util/constants");
 
 function Arb(web3, events, config) {
-  const { strats, profitThreshold, gasPrice, chainId, router1, router2, uniArbPairs } = config;
+  const { 
+    strats,
+    profitThreshold, 
+    gasPrice, 
+    chainId, 
+    router1FactoryAddress,
+    router1InitCodeHash,
+    router2FactoryAddress,
+    router2InitCodeHash, 
+    uniArbPairs,
+    uniBalPairs
+ } = config;
   let arbInstance;
-  let uniRouter;
+  let uniRouterArb;
+  let uniBalArb;
 
   /**
    * Initalizes arbitrage strategies
    */
   this.arb = async () => {
-    uniRouter = new UniRouter(web3, _getArbContractInstance(), config);
+    uniRouterArb = new UniRouterArb(web3, _getArbContractInstance(), config);
     events.subscribeToNewBlocks()
       .on("connected", subscriptionId => console.log('Listening to block headers'))
       .on("data", blockHeader => {
         for (let strat of strats) {
           if (!isValidStrat(strat))
             throw new Error(`Invalid strat: ${strat}. Please update STRAT_LIST`)
-          
           if (strat === STRAT_UNI_ROUTER)
-            await uniRouter.arb();
+            await uniRouterArb.arb();
+          else if (strat === STRAT_UNI_BAL)
+            await uniBalArb.arb();
         }
       })
       .on("error", console.error("Error receiving new blocks"))

@@ -22,6 +22,7 @@ const stratAbis = {
 };
 
 const TOKEN_USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
+const MULTICALL = "0xeefba1e63905ef1d7acba5a8513c70307c1ce441";
 
 module.exports = {
   STRAT_UNI_ROUTER,
@@ -34,5 +35,6 @@ module.exports = {
   stratAbis,
   abi_erc20,
   TOKEN_USDC,
+  MULTICALL,
   abi_arb
 };
